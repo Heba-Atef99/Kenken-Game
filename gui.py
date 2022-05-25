@@ -1,6 +1,4 @@
 import tkinter as tk
-import tkinter.ttk as tkk
-from turtle import color
 from PIL import Image,ImageTk
 
 # Setting the start window
@@ -19,18 +17,6 @@ window.resizable(False, False)
 # start_btn = tk.Button(window, text="Start Kenken", state=tk.DISABLED)
 # start_btn.grid(row=5, column=2)
 # Create style Object
-
-style = tkk.Style()
- 
-style.configure('TButton', font =
-               ('calibri', 20, 'bold'),
-                    borderwidth = '4')
- 
-# Changes will be reflected
-# by the movement of mouse.
-style.map('TButton', foreground = [('active', '!disabled', 'green')],
-                     background = [('active', 'black')])
-
 
 canvas = tk.Canvas(window, width = 600, height = 360)
 canvas.pack(fill='both', expand = True)
@@ -67,10 +53,24 @@ drop["highlightthickness"] = 0
 drop.place(x=270, y=198)
 
 
-# def get_input():
+def get_input():
+    global board_size_entry, menu
+    board_size= board_size_entry.get()
+    algorithm = menu.get()
+    
+
+    # Check that all fields are filled
+    if not board_size or algorithm == "Select Algorithm":
+        tk.messagebox.showwarning("Warning", "Please, fill all the input fields")
+
+    if int(board_size) < 3:
+        tk.messagebox.showwarning("Warning", "The minumem number for board size is 3")
+
+    print(board_size)
+    print(algorithm)
 
 # Creating the start button
-start_btn = tk.Button(window, text="Start Kenken", font=("Times New Roman", 10), command = window.destroy)
+start_btn = tk.Button(window, text="Start Kenken", font=("Times New Roman", 10), command = get_input)
 start_btn.place(x=262, y=280)
 
 # As of the window is in event listner mode
