@@ -16,6 +16,8 @@ def create_grid(canvas, board_size):
             start = left_margin + i * length
             end = left_margin + (i+1) * length
             canvas.create_rectangle(start, r_start, end, r_end, outline="black", fill="white")
+            offset = length/2
+            canvas.create_text(offset + start, offset + r_start, text = '59', font=("Times New Roman", 20), fill="black")
             offset = 7
             canvas.create_text(3 + offset + start, offset + r_start, text = '11+', font=("Times New Roman", 10), fill="red")
 
