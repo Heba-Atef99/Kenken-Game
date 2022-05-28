@@ -55,7 +55,7 @@ def get_input():
     # if not board_size or algorithm == "Select Algorithm":
     #     messagebox.showwarning("Warning", "Please, fill all the input fields")
 
-    # # Check that min no for board size is 3
+    # # Check that min no for board size is 2
     # elif int(board_size) < 2:
     #     messagebox.showwarning("Warning", "The minimum number for board size is 2")
 

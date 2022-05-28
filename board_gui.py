@@ -11,7 +11,22 @@ font_style = "Times New Roman"
 box_top_margin = top_margin + 10
 
 def get_min_tuple(tuple_list):
-    return list(map(min, zip(*tuple_list)))
+    min_cell = list(map(min, zip(*tuple_list)))
+    min_cell = (min_cell[0], min_cell[1])
+    if min_cell not in tuple_list:
+        min_cell = tuple_list[0]
+        for index, cell in enumerate(tuple_list):
+            if index == len(tuple_list) - 1:
+                break
+
+            next_cell = tuple_list[index + 1]
+            if next_cell[1] < min_cell[1]:
+                min_cell = next_cell
+
+            elif next_cell[1] == min_cell[1]:
+                if next_cell[0] < min_cell[0]:
+                    min_cell = next_cell
+    return min_cell
 
 def prepare_solution(solutions, board_size):
     sol = np.zeros((board_size, board_size), dtype=np.int8)
@@ -21,19 +36,19 @@ def prepare_solution(solutions, board_size):
             i1 = e[0] - 1
             i2 = e[1] - 1
             sol[i2][i1] = values[i]
-
     return sol
 
 def draw_group_condition(canvas, cell, op, number):
     number = '(' + str(number) + ')'
     op = '*' if(op == '.') else op
-    txt = number + op
-    offset = 10
+    txt = number + ' ' + op
+    offset = 10 if (len(number)<3) else 16 
+    top_offset = offset - 2 if (len(number)<3) else offset - 5
     col = cell[0] - 1
     row = cell[1] - 1
     r_start = box_top_margin + row * length
     start = side_margin + col * length
-    canvas.create_text(3 + offset + start, offset - 2 + r_start, text = txt, font=(font_style, 10), fill="red")
+    canvas.create_text(3 + offset + start, top_offset + r_start, text = txt, font=(font_style, 10), fill="red")
 
 def draw_cell_bh_line(canvas, cell):
     col = cell[0]
@@ -107,16 +122,22 @@ def create_grid(canvas, board_size, sol_arr):
             txt = str(sol_arr[row][i])
             canvas.create_text(offset + start, offset + r_start, text = txt, font=(font_style, 20), fill="black")
 
-def create_board_new_window(window, board_size):
+def solve(window, board_size, groups, solutions):
+    # Create board
     size = board_size * length
     width = 2 * side_margin + size
     height = 2 * top_margin + size
     geometry = str(width) + "x" + str(height)
     board = Toplevel(window)
-    board.title("Solution Board")
+    board.title("Solution Board "+ str(board_size) + "x"+ str(board_size))
     board.iconphoto(False, tk.PhotoImage(file='assets/logo.png'))
     board.geometry(geometry)
     board.resizable(False, False)
+
+    if board_size > 8:
+        board.resizable(True, True)
+        v = tk.Scrollbar(board, orient='vertical')
+        v.pack(side = tk.RIGHT, fill = tk.Y)
 
     # Creating a canvas to put all the widgets inside
     canvas = tk.Canvas(board, width = 600, height = 360)
@@ -129,12 +150,18 @@ def create_board_new_window(window, board_size):
     logo= ImageTk.PhotoImage(resized_logo)
     canvas.create_image(width/2, 40, image=logo, anchor = "center")
     
-    return canvas, board
-
-def solve(window, board_size, groups, solutions):
-    canvas, board = create_board_new_window(window, board_size)
+    # Now Solve
     sol_arr = prepare_solution(solutions, board_size)
     create_grid(canvas, board_size, sol_arr)
     draw_border_grid(canvas, board_size)
     draw_groups_borders(canvas, groups, board_size)
     board.mainloop()
+    return canvas, board
+
+# def solve(window, board_size, groups, solutions):
+#     canvas, board = create_board_new_window(window, board_size)
+#     sol_arr = prepare_solution(solutions, board_size)
+#     create_grid(canvas, board_size, sol_arr)
+#     draw_border_grid(canvas, board_size)
+#     draw_groups_borders(canvas, groups, board_size)
+#     board.mainloop()
