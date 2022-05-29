@@ -65,7 +65,6 @@ class CSP():
 
 # Variable ordering
 def first(iterable, default=None):
-    """Return the first element of an iterable or the next element of a generator; or default."""
     try:
         return iterable[0]
     except IndexError:
@@ -74,13 +73,11 @@ def first(iterable, default=None):
         return next(iterable, default)
 
 def first_unassigned_variable(assignment, csp):
-    """The default variable order."""
     return first([var for var in csp.variables if var not in assignment])
 
 def count(seq):
     """Count the number of items in sequence that are interpreted as true."""
     return sum(bool(x) for x in seq)
-
 
 # The search, proper
 
@@ -88,8 +85,7 @@ def backtracking_search(csp,
                         select_unassigned_variable=first_unassigned_variable,
                         order_domain_values=unordered_domain_values,
                         inference=no_inference):
-    """[Figure 6.5]"""
-
+    
     def backtrack(assignment):
         #check if we added all var 
         if len(assignment) == len(csp.variables):
