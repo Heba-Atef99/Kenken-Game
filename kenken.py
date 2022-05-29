@@ -7,6 +7,16 @@ from functools import reduce
 from random import random, shuffle, randint, choice
 from time import time
 
+def adjacent(xy1, xy2):
+    """
+    Checks whether two positions represented in 2D coordinates are adjacent
+    """
+    x1, y1 = xy1
+    x2, y2 = xy2
+
+    dx, dy = x1 - x2, y1 - y2
+
+    return (dx == 0 and abs(dy) == 1) or (dy == 0 and abs(dx) == 1)
 
 def operation(operator):
     """
@@ -116,11 +126,153 @@ def generate(size):
 
     return size, cliques
 
+def validate(size, cliques):
+    """
+    Validate the integrity of the input as a kenken board
+      * For each of the cliques:
+        * Remove duplicate members of the clique at hand
+        * Check whether the specified operator is acceptable or not
+        * Check if any of the members of the clique are out of bounds
+        * Check if any member of the clique is mentioned in any other clique
+      * Check if the given cliques cover the whole board or not
+    """
+    IsoutOfBounds = lambda xy: xy[0] < 1 or xy[0] > size or xy[1] < 1 or xy[1] > size
+
+    mentioned = set()
+    for i in range(len(cliques)):
+        members, operator, target = cliques[i]
+
+        cliques[i] = (tuple(set(members)), operator, target)
+
+        members, operator, target = cliques[i]
+
+        if operator not in "+-*/.":
+            print("Operation", operator, "of clique", cliques[i], "is unacceptable", file=stderr)
+            exit(1)
+
+        problem = list(filter(IsoutOfBounds, members))
+        if problem: #check if all members of clique are in bounds of the board
+            print("Members", problem, "of clique", cliques[i], "are out of bounds of the board", file=stderr)
+            exit(2)
+
+        problem = mentioned.intersection(set(members))
+        if problem: #check that there is not a member that's in 2 different cliques
+            print("Members", problem, "of clique", cliques[i], "are in more than one clique", file=stderr)
+            exit(3)
+
+        mentioned.update(set(members)) #add members of the validated clique
+
+    indexes = range(1, size + 1)
+
+    problem = set([(x, y) for y in indexes for x in indexes]).difference(mentioned)
+
+    if problem: #check that all positions of the board are included in the cliques
+        print("Positions", problem, "were not mentioned in any clique", file=stderr)
+        exit(4)
+
+def RowXorCol(xy1, xy2):
+    """
+    Evaluates to true if the given positions are in the same row / column
+    but are in different columns / rows
+    """
+    return (xy1[0] == xy2[0]) != (xy1[1] == xy2[1])
+
+def conflicting(A, a, B, b):
+    """
+    Evaluates to true if:
+      * there exists mA so that ma is a member of A and
+      * there exists mb so that mb is a member of B and
+      * RowXorCol(mA, mB) evaluates to true and
+      * the value of mA in 'assignment' a is equal to
+        the value of mb in 'assignment' b
+    """
+    for i in range(len(A)):
+        for j in range(len(B)):
+            mA = A[i]
+            mB = B[j]
+
+            ma = a[i]
+            mb = b[j]
+            if RowXorCol(mA, mB) and ma == mb:
+                return True
+
+    return False
+
+def satisfies(values, operation, target):
+    """
+    Evaluates to true if the result of applying the operation
+    on a permutation of the given values is equal to the specified target
+    """
+    for p in permutations(values):
+        if reduce(operation, p) == target:
+            return True
+
+    return False
+
+def gdomains(size, cliques):
+    """
+    @ https://docs.python.org/2/library/itertools.html
+    @ product('ABCD', repeat=2) = [AA AB AC AD BA BB BC BD CA CB CC CD DA DB DC DD]
+
+    For every clique in cliques:
+        * Initialize the domain of each variable to contain every product
+        of the set [1...board-size] that are of length 'clique-size'.
+        For example:
+
+            board-size = 3 and clique-size = 2
+
+            products = [(1, 1), (1, 2), (1, 3), (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3)]
+
+        * Discard any value (assignment of the members of the clique) that:
+        * is resulting in the members of the clique 'conflicting' with each other
+        * does not 'satisfy' the given operation
+    """
+    domains = {}
+    for clique in cliques:
+        members, operator, target = clique
+
+        domains[members] = list(product(range(1, size + 1), repeat=len(members))) #all combinations possible for members
+
+
+        qualifies = lambda values: not conflicting(members, values, members, values) and satisfies(values, operation(operator), target)
+        #filter from all combinations just the combinations that satisfy target
+        domains[members] = list(filter(qualifies, domains[members]))
+
+    return domains
+
+def gneighbors(cliques):
+    """
+    Determine the neighbors of each variable for the given puzzle
+        For every clique in cliques
+        * Initialize its neighborhood as empty
+        * For every clique in cliques other than the clique at hand,
+            if they are probable to 'conflict' they are considered neighbors
+    """
+    neighbors = {}
+    for members, _, _ in cliques:
+        neighbors[members] = []
+
+    for A, _, _ in cliques:
+        for B, _, _ in cliques:
+            if A != B and B not in neighbors[A]:
+                if conflicting(A, [-1] * len(A), B, [-1] * len(B)):
+                    neighbors[A].append(B)
+                    neighbors[B].append(A)
+
+    return neighbors
+
 
 class Kenken(csp.CSP):
 
     def __init__(self, size, cliques):
-        
+        validate(size, cliques)
+
+        variables = [members for members, _, _ in cliques]
+
+        domains = gdomains(size, cliques)
+
+        neighbors = gneighbors(cliques)
+
         csp.CSP.__init__(self, variables, domains, neighbors, self.constraint)
 
         self.size = size
@@ -150,14 +302,21 @@ class Kenken(csp.CSP):
 if __name__ == "__main__":
 
 
+    # dt = time()
+    # size, cliques = generate(3)
+    # print(cliques)
+    #
+    # ken = Kenken(size, cliques)
+    #
+    # assignment = csp.backtracking_search(ken)
+    # dt = time() - dt
+    #
+    # print(dt)
     dt = time()
-    size, cliques = generate(3)
-    print(cliques)
-
-    ken = Kenken(size, cliques)
-
-    assignment = csp.backtracking_search(ken)
+    for i in range(100):
+        size, cliques = generate(3)
+        ken = Kenken(size, cliques)
+        assignment = csp.backtracking_search(ken, inference=csp.mac)
+        ken.display(assignment)
     dt = time() - dt
-
-    print(dt)
-    
+    print("time for 100 boards in backtracking search with arc consistency= ", dt, "second")
