@@ -62,8 +62,55 @@ class CSP():
 # ______________________________________________________________________________
 # CSP Backtracking Search
 
+
 # Variable ordering
+def first(iterable, default=None):
+    """Return the first element of an iterable or the next element of a generator; or default."""
+    try:
+        return iterable[0]
+    except IndexError:
+        return default
+    except TypeError:
+        return next(iterable, default)
+
+def first_unassigned_variable(assignment, csp):
+    """The default variable order."""
+    return first([var for var in csp.variables if var not in assignment])
 
 def count(seq):
     """Count the number of items in sequence that are interpreted as true."""
     return sum(bool(x) for x in seq)
+
+
+# The search, proper
+
+def backtracking_search(csp,
+                        select_unassigned_variable=first_unassigned_variable,
+                        order_domain_values=unordered_domain_values,
+                        inference=no_inference):
+    """[Figure 6.5]"""
+
+    def backtrack(assignment):
+        #check if we added all var 
+        if len(assignment) == len(csp.variables):
+            return assignment
+        # add var to dict    
+        var = select_unassigned_variable(assignment, csp)
+        for value in order_domain_values(var, assignment, csp):
+            #check the number if conflicts =0 the add this var with this val
+            if 0 == csp.nconflicts(var, value, assignment):
+                csp.assign(var, value, assignment)
+                
+                removals = csp.suppose(var, value)   #??
+                if inference(csp, var, value, assignment, removals):
+                    result = backtrack(assignment)
+                    if result is not None:
+                        return result
+                csp.restore(removals)
+        csp.unassign(var, assignment)
+        return None
+
+    result = backtrack({})
+    assert result is None or csp.goal_test(result)
+    return result
+
