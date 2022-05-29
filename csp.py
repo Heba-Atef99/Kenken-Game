@@ -79,18 +79,43 @@ def count(seq):
     """Count the number of items in sequence that are interpreted as true."""
     return sum(bool(x) for x in seq)
 
-
-
 def unordered_domain_values(var, assignment, csp):
     """The default value order."""
     return csp.choices(var)
 
-#Backtracking only
-def no_inference(csp, var, value, assignment, removals):
+
+
+def AC3(csp, queue=None, removals=None):
+    """[Figure 6.3]"""
+    if queue is None:
+        queue = [(Xi, Xk) for Xi in csp.variables for Xk in csp.neighbors[Xi]]
+    csp.support_pruning()
+    while queue:
+        (Xi, Xj) = queue.pop()
+        if revise(csp, Xi, Xj, removals):
+            if not csp.curr_domains[Xi]:
+                return False
+            for Xk in csp.neighbors[Xi]:
+                if Xk != Xj:
+                    queue.append((Xk, Xi))
     return True
 
 
-# The search, proper
+def revise(csp, Xi, Xj, removals):
+    """Return true if we remove a value."""
+    revised = False
+    for x in csp.curr_domains[Xi][:]:
+        # If Xi=x conflicts with Xj=y for every possible y, eliminate Xi=x
+        if all(not csp.constraints(Xi, x, Xj, y) for y in csp.curr_domains[Xj]):
+            csp.prune(Xi, x, removals)
+            revised = True
+    return revised
+
+# _________________________
+
+#Backtracking only
+def no_inference(csp, var, value, assignment, removals):
+    return True
 #Backtracking with forward checking algorithm
 def forward_checking(csp, var, value, assignment, removals):
     
@@ -105,6 +130,13 @@ def forward_checking(csp, var, value, assignment, removals):
                 return False
     return True
 
+#Backtracking with arc algorithm
+def mac(csp, var, value, assignment, removals):
+    """Maintain arc consistency."""
+    return AC3(csp, [(X, var) for X in csp.neighbors[var]], removals)
+
+
+# The search, proper
 #Backtracking algorithm
 def backtracking_search(csp,
                         select_unassigned_variable=first_unassigned_variable,
