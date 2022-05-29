@@ -79,8 +79,33 @@ def count(seq):
     """Count the number of items in sequence that are interpreted as true."""
     return sum(bool(x) for x in seq)
 
-# The search, proper
 
+
+def unordered_domain_values(var, assignment, csp):
+    """The default value order."""
+    return csp.choices(var)
+
+#Backtracking only
+def no_inference(csp, var, value, assignment, removals):
+    return True
+
+
+# The search, proper
+#Backtracking with forward checking algorithm
+def forward_checking(csp, var, value, assignment, removals):
+    
+    csp.support_pruning()
+
+    for B in csp.neighbors[var]:
+        if B not in assignment:
+            for b in csp.curr_domains[B][:]:
+                if not csp.constraints(var, value, B, b):
+                    csp.prune(B, b, removals)
+            if not csp.curr_domains[B]:
+                return False
+    return True
+
+#Backtracking algorithm
 def backtracking_search(csp,
                         select_unassigned_variable=first_unassigned_variable,
                         order_domain_values=unordered_domain_values,
