@@ -1,5 +1,4 @@
-
-import csp
+import src.csp as csp
 # @ stderr: reporting errors
 from sys import stderr
 from itertools import product, permutations
@@ -300,23 +299,11 @@ class Kenken(csp.CSP):
 
     
 if __name__ == "__main__":
-
-
-    # dt = time()
-    # size, cliques = generate(3)
-    # print(cliques)
-    #
-    # ken = Kenken(size, cliques)
-    #
-    # assignment = csp.backtracking_search(ken)
-    # dt = time() - dt
-    #
-    # print(dt)
     dt = time()
     for i in range(100):
         size, cliques = generate(3)
         ken = Kenken(size, cliques)
         assignment = csp.backtracking_search(ken, inference=csp.mac)
-        ken.display(assignment)
+        # ken.display(assignment)
     dt = time() - dt
     print("time for 100 boards in backtracking search with arc consistency= ", dt, "second")
