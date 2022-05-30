@@ -2,6 +2,8 @@ import tkinter as tk
 from PIL import Image,ImageTk
 from tkinter import messagebox
 from board_gui import solve
+from src.kenken import generate, Kenken
+from src.csp import backtracking_search, forward_checking, mac, no_inference
 
 font_style = "Times New Roman"
 # Setting the start window with title, icon & fixed size
@@ -41,31 +43,32 @@ menu= tk.StringVar()
 menu.set("Select Algorithm")
 
 #Create a dropdown Menu
-drop= tk.OptionMenu(window, menu, "Backtracking", "Backtracking With Forward Checking","Backtracking With Arc Consistency")
+drop= tk.OptionMenu(window, menu, "1. Backtracking", "2. Backtracking With Forward Checking","3. Backtracking With Arc Consistency")
 drop["highlightthickness"] = 0
 drop.place(x=270, y=198)
 
-
 def get_input():
     global board_size_entry, menu
-    board_size= int(board_size_entry.get())
+    board_size= board_size_entry.get()
     algorithm = menu.get()
-    
-    # # Check that all fields are filled
-    # if not board_size or algorithm == "Select Algorithm":
-    #     messagebox.showwarning("Warning", "Please, fill all the input fields")
+    inference = [no_inference, forward_checking, mac]
+    # Check that all fields are filled
+    if not board_size or algorithm == "Select Algorithm":
+        messagebox.showwarning("Warning", "Please, fill all the input fields")
 
-    # # Check that min no for board size is 2
-    # elif int(board_size) < 2:
-    #     messagebox.showwarning("Warning", "The minimum number for board size is 2")
+    # Check that min no for board size is 2
+    elif int(board_size) < 2:
+        messagebox.showwarning("Warning", "The minimum number for board size is 2")
 
-    # else:
-    #     solution = 0
-    #     create_board(window, board_size, solution)
-    groups = [(((1, 1),), '.', 3), (((2, 1), (3, 1), (3, 2), (2, 2)), '+', 8), (((1, 2), (1, 3)), '-', -1), (((2, 3), (3, 3)), '-', -2)]
-    solutions = {((1, 1),): (3,), ((3, 1), (3, 2), (2, 1), (2, 2)): (1, 2, 2, 3), ((1, 2), (1, 3)): (1, 2), ((2, 3), (3, 3)): (1, 3)}
-    solve(window, board_size, groups, solutions)
-
+    else:
+        board_size= int(board_size_entry.get())
+        algo_index = int(algorithm[0]) - 1
+        size, groups = generate(board_size)
+        ken = Kenken(size, groups)
+        solutions = backtracking_search(ken, inference=inference[algo_index]) 
+        ken.display(solutions)
+        solve(window, board_size, groups, solutions)
+        
 # Creating the start button
 start_btn = tk.Button(window, text="Start Kenken", font=(font_style, 10), command = get_input)
 start_btn.place(x=262, y=280)
