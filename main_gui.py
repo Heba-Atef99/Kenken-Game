@@ -66,7 +66,7 @@ def get_input():
         size, groups = generate(board_size)
         ken = Kenken(size, groups)
         solutions = backtracking_search(ken, inference=inference[algo_index]) 
-        ken.display(solutions)
+        # ken.display(solutions)
         solve(window, board_size, groups, solutions)
         
 # Creating the start button
