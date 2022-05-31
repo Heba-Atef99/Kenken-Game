@@ -40,7 +40,7 @@ def prepare_solution(solutions, board_size):
 
 def draw_group_condition(canvas, cell, op, number):
     number = '(' + str(number) + ')'
-    op = '*' if(op == '.') else op
+    op = '' if(op == '.') else op
     txt = number + ' ' + op
     offset = 10 if (len(number)<3) else 16 
     top_offset = offset - 2 if (len(number)<3) else offset - 5
